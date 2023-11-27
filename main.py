@@ -53,14 +53,17 @@ def get_file_paths(
 
 def minify_file(file_path: Path) -> tuple[Path, str]:
     raw_content = file_path.read_text(encoding="utf-8")
+
     if file_path.suffix != ".py":
         return file_path, raw_content
-    return file_path, python_minifier.minify(
+
+    minified_content = python_minifier.minify(
         raw_content,
         remove_literal_statements=True,
         rename_locals=False,
         remove_annotations=False,
     )
+    return file_path, minified_content
 
 
 def minify_files(file_paths: set[Path]) -> dict[Path, str]:
@@ -77,7 +80,7 @@ def create_final_prompt(
     files_str = "\n".join(
         [
             f"File `{file_path.relative_to(root_directory).as_posix()}`.\n```python\n{file_content}\n```"
-            for (file_path, file_content) in files.items()
+            for file_path, file_content in files.items()
         ]
     )
     return f"{prompt_header}\n{files_str}.\n{prompt}\n{prompt_footer}"
@@ -85,7 +88,7 @@ def create_final_prompt(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Gather project files, minify Python ones and concatenate all of them into one prompt."
+        description="Gather project files, minify Python ones, and concatenate all of them into one prompt."
     )
     parser.add_argument(
         "--directory",
@@ -101,7 +104,6 @@ def main() -> None:
     )
     parser.add_argument("prompt", type=str, help="prompt to be appended to the end")
     args = parser.parse_args()
-
     validate_arguments(args)
 
     include_patterns = get_include_patterns(args.include)
