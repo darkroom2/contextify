@@ -5,70 +5,75 @@ import pyperclip
 import python_minifier
 
 
-def validate_arguments(args):
-    if not args.directory.exists():
-        raise FileNotFoundError(f"Directory {args.directory} does not exist.")
-
-    if not args.directory.is_dir():
-        raise NotADirectoryError(f"{args.directory} is not a directory.")
-
+def validate_arguments(args: argparse.Namespace) -> None:
+    directory = args.directory
+    if not directory.exists():
+        raise FileNotFoundError(f"Directory {directory} does not exist.")
+    if not directory.is_dir():
+        raise NotADirectoryError(f"{directory} is not a directory.")
     if not args.prompt:
         raise ValueError("Prompt cannot be empty.")
-
     if args.exclude:
         args.exclude += ",.git/**/*"
     else:
         args.exclude = ".git/**/*"
 
 
-def get_gitignore_patterns(directory):
+def get_gitignore_patterns(directory: Path) -> set[str]:
     return set()
 
 
-def get_include_patterns(include_str):
+def get_include_patterns(include_str: str) -> set[str]:
     include_patterns = include_str.split(",") if include_str else ["*"]
     return set(include_patterns)
 
 
-def get_exclude_patterns(exclude_str):
+def get_exclude_patterns(exclude_str: str) -> set[str]:
     exclude_patterns = exclude_str.split(",") if exclude_str else []
     return set(exclude_patterns)
 
 
-def get_file_paths(directory, include_patterns, exclude_patterns):
-    included_files = set()
-    for pattern in include_patterns:
-        filtered_paths = filter(lambda path: path.is_file(), directory.rglob(pattern))
-        included_files.update(filtered_paths)
-
-    excluded_files = set()
-    for pattern in exclude_patterns:
-        filtered_paths = filter(lambda path: path.is_file(), directory.rglob(pattern))
-        excluded_files.update(filtered_paths)
-
+def get_file_paths(
+    directory: Path, include_patterns: set[str], exclude_patterns: set[str]
+) -> set[Path]:
+    included_files = {
+        path
+        for pattern in include_patterns
+        for path in directory.rglob(pattern)
+        if path.is_file()
+    }
+    excluded_files = {
+        path
+        for pattern in exclude_patterns
+        for path in directory.rglob(pattern)
+        if path.is_file()
+    }
     return included_files - excluded_files
 
 
-def minify_files(file_paths):
-    files = {}
-    for file_path in file_paths:
-        if not file_path.suffix == ".py":
-            continue
-        raw_content = file_path.read_text(encoding="utf-8")
-        content = python_minifier.minify(
-            raw_content, remove_literal_statements=True, rename_locals=False
-        )
-        files[file_path] = content
-    return files
+def minify_file(file_path: Path) -> tuple[Path, str]:
+    raw_content = file_path.read_text(encoding="utf-8")
+    if file_path.suffix != ".py":
+        return file_path, raw_content
+    return file_path, python_minifier.minify(
+        raw_content,
+        remove_literal_statements=True,
+        rename_locals=False,
+        remove_annotations=False,
+    )
+
+
+def minify_files(file_paths: set[Path]) -> dict[Path, str]:
+    return {file_path: content for file_path, content in map(minify_file, file_paths)}
 
 
 def create_final_prompt(
     files: dict[Path, str],
     root_directory: Path,
-    prompt,
-    prompt_header="Here is the context of my current project:",
-    prompt_footer="Use best practices and clean code techniques. Try your best!",
-):
+    prompt: str,
+    prompt_header: str = "Here is the context of my current project:",
+    prompt_footer: str = "Use best practices and clean code techniques. Try your best!",
+) -> str:
     files_str = "\n".join(
         [
             f"File `{file_path.relative_to(root_directory).as_posix()}`.\n```python\n{file_content}\n```"
@@ -78,7 +83,7 @@ def create_final_prompt(
     return f"{prompt_header}\n{files_str}.\n{prompt}\n{prompt_footer}"
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Gather project files, minify Python ones and concatenate all of them into one prompt."
     )
@@ -106,11 +111,8 @@ def main():
     file_paths = get_file_paths(
         args.directory, include_patterns, exclude_patterns | gitignore_patterns
     )
-
     files = minify_files(file_paths)
-
     final_prompt = create_final_prompt(files, args.directory, args.prompt)
-
     pyperclip.copy(final_prompt)
 
 
