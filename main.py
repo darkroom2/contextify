@@ -5,14 +5,19 @@ import pyperclip
 import python_minifier
 
 
-def validate_arguments(args: argparse.Namespace) -> None:
-    directory = args.directory
+def validate_directory(directory: Path) -> None:
     if not directory.exists():
         raise FileNotFoundError(f"Directory {directory} does not exist.")
     if not directory.is_dir():
         raise NotADirectoryError(f"{directory} is not a directory.")
+
+
+def validate_arguments(args: argparse.Namespace) -> None:
+    validate_directory(args.directory)
+
     if not args.prompt:
         raise ValueError("Prompt cannot be empty.")
+
     if args.exclude:
         args.exclude += ",.git/**/*"
     else:
@@ -67,7 +72,11 @@ def minify_file(file_path: Path) -> tuple[Path, str]:
 
 
 def minify_files(file_paths: set[Path]) -> dict[Path, str]:
-    return {file_path: content for file_path, content in map(minify_file, file_paths)}
+    return {file_path: content for (file_path, content) in map(minify_file, file_paths)}
+
+
+def create_file_str(file_name: str, file_content: str) -> str:
+    return f"File `{file_name}`.\n```python\n{file_content}\n```"
 
 
 def create_final_prompt(
@@ -79,8 +88,11 @@ def create_final_prompt(
 ) -> str:
     files_str = "\n".join(
         [
-            f"File `{file_path.relative_to(root_directory).as_posix()}`.\n```python\n{file_content}\n```"
-            for file_path, file_content in files.items()
+            create_file_str(
+                file_path.relative_to(root_directory).as_posix(),
+                file_content
+            )
+            for (file_path, file_content) in files.items()
         ]
     )
     return f"{prompt_header}\n{files_str}.\n{prompt}\n{prompt_footer}"
@@ -104,6 +116,7 @@ def main() -> None:
     )
     parser.add_argument("prompt", type=str, help="prompt to be appended to the end")
     args = parser.parse_args()
+
     validate_arguments(args)
 
     include_patterns = get_include_patterns(args.include)
