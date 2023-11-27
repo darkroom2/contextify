@@ -76,21 +76,20 @@ def minify_files(file_paths: set[Path]) -> dict[Path, str]:
 
 
 def create_file_str(file_name: str, file_content: str) -> str:
-    return f"File `{file_name}`.\n```python\n{file_content}\n```"
+    return f"File `{file_name}`:\n```python\n{file_content}\n```"
 
 
 def create_final_prompt(
     files: dict[Path, str],
     root_directory: Path,
     prompt: str,
-    prompt_header: str = "Here is the context of my current project:",
+    prompt_header: str = "Here is the context of my current project.",
     prompt_footer: str = "Use best practices and clean code techniques. Try your best!",
 ) -> str:
     files_str = "\n".join(
         [
             create_file_str(
-                file_path.relative_to(root_directory).as_posix(),
-                file_content
+                file_path.relative_to(root_directory).as_posix(), file_content
             )
             for (file_path, file_content) in files.items()
         ]
