@@ -6,8 +6,6 @@ import python_minifier
 
 
 def validate_directory(directory: Path) -> None:
-    if not directory.exists():
-        raise FileNotFoundError(f"Directory {directory} does not exist.")
     if not directory.is_dir():
         raise NotADirectoryError(f"{directory} is not a directory.")
 
@@ -28,14 +26,8 @@ def get_gitignore_patterns(directory: Path) -> set[str]:
     return set()
 
 
-def get_include_patterns(include_str: str) -> set[str]:
-    include_patterns = include_str.split(",") if include_str else ["*"]
-    return set(include_patterns)
-
-
-def get_exclude_patterns(exclude_str: str) -> set[str]:
-    exclude_patterns = exclude_str.split(",") if exclude_str else []
-    return set(exclude_patterns)
+def get_patterns(pattern_str: str, default_pattern: str = "*") -> set[str]:
+    return set(pattern_str.split(",")) if pattern_str else {default_pattern}
 
 
 def get_file_paths(
@@ -118,8 +110,8 @@ def main() -> None:
 
     validate_arguments(args)
 
-    include_patterns = get_include_patterns(args.include)
-    exclude_patterns = get_exclude_patterns(args.exclude)
+    include_patterns = get_patterns(args.include)
+    exclude_patterns = get_patterns(args.exclude)
     gitignore_patterns = get_gitignore_patterns(args.directory)
 
     file_paths = get_file_paths(
