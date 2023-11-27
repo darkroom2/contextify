@@ -63,3 +63,9 @@ custom prompt.
 - **Optimized Compilation:** Project files are compiled and minified for optimal token usage.
 
 - **Prompt Structure:** Generated prompts adhere to a structured format for effective utilization by language models.
+
+## TODO
+
+[ ] create python package installable from git pr PyPI
+[ ] add tests
+[ ] add CI/CD

@@ -121,7 +121,9 @@ def main() -> None:
     file_paths = get_file_paths(
         args.directory, include_patterns, exclude_patterns | gitignore_patterns
     )
+    # TODO: add minify option to args (or config file)
     files = minify_files(file_paths)
+    # TODO: add prompt_header and prompt_footer to args (or config file)
     final_prompt = create_final_prompt(files, args.directory, args.prompt)
     pyperclip.copy(final_prompt)
 
