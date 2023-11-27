@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 import argparse
 from pathlib import Path
 
 import pyperclip
 import python_minifier
+import tiktoken
 
 
 def validate_directory(directory: Path) -> None:
@@ -127,11 +130,10 @@ def main() -> None:
         print(f"    {file_path.relative_to(args.directory).as_posix()}")
     print()
 
-    # TODO: count GPT tokens
-    print(f"Total tokens: {len(final_prompt.split())}\n")
+    tokens_count = len(tiktoken.get_encoding("cl100k_base").encode(final_prompt))
+    print(f"Total tokens: {tokens_count}")
     print("Prompt copied to clipboard!")
 
 
 if __name__ == "__main__":
-    # TODO: write readme
     main()
