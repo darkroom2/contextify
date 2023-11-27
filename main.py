@@ -23,6 +23,7 @@ def validate_arguments(args: argparse.Namespace) -> None:
 
 
 def get_gitignore_patterns(directory: Path) -> set[str]:
+    # TODO: parse .gitignore file to pathlib.Path.glob compatible patterns
     return set()
 
 
@@ -121,6 +122,16 @@ def main() -> None:
     final_prompt = create_final_prompt(files, args.directory, args.prompt)
     pyperclip.copy(final_prompt)
 
+    print("Following files were minified:")
+    for file_path in files:
+        print(f"    {file_path.relative_to(args.directory).as_posix()}")
+    print()
+
+    # TODO: count GPT tokens
+    print(f"Total tokens: {len(final_prompt.split())}\n")
+    print("Prompt copied to clipboard!")
+
 
 if __name__ == "__main__":
+    # TODO: write readme
     main()
